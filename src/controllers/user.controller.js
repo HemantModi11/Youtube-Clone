@@ -6,17 +6,17 @@ import { apiResponse } from "../utils/apiResponse.js"
 
 const registerUser = asyncHandler(async (req, res) => {
     // Get user details from frontend
-    const {fullName, email, username, password} = req.body
+    const {fullname, email, username, password} = req.body
     
     // Data Validation
     if(
-        [fullName, email, username, password].some((field) => field?.trim() === "")
+        [fullname, email, username, password].some((field) => field?.trim() === "")
     ){
         throw new apiError(400, "All fields are compulsory")
     }
 
     // Check for existing User
-    const existingUser = User.findOne({
+    const existingUser = await User.findOne({
         $or: [{username}, {email}]
     })
 
@@ -26,7 +26,11 @@ const registerUser = asyncHandler(async (req, res) => {
 
     // Check for Cover images and avatar
     const avatarLocalPath = req.files?.avatar[0]?.path;
-    const coverImageLocalPath = req.files?.coverImage[0]?.path;
+    let coverImageLocalPath;
+
+    if(req.files && Array.isArray(req.files.coverImage) && req.files.coverImage.length > 0){
+        coverImageLocalPath  = req.files?.coverImage[0]?.path;
+    }
 
     if(!avatarLocalPath){
         throw new apiError(400, "Avatar file is required")
@@ -42,7 +46,7 @@ const registerUser = asyncHandler(async (req, res) => {
 
     // Create new object and do entry in db
     const user = await User.create({
-        fullName,
+        fullname,
         avatar: avatar.url,
         coverImage: coverImage?.url || "",
         email,
